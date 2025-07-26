@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💰 نظام حساب المال</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+  body { background: linear-gradient(135deg,#74ebd5,#ACB6E5); min-height:100vh; }
+  .card { border-radius: 16px; box-shadow: 0 0 15px #0002; }
+  table td, table th { vertical-align: middle !important; }
+</style>
+</head>
+<body class="p-3">
+
+<div class="container">
+  <h1 class="text-center mb-4 text-white">💰 نظام حساب المال</h1>
+
+  <!-- إدخال عملية -->
+  <div class="card mb-4">
+    <div class="card-header fw-bold">➕ إضافة عملية</div>
+    <div class="card-body row g-2">
+      <div class="col-md-3">
+        <input id="opName" class="form-control" placeholder="اسم العملية">
+      </div>
+      <div class="col-md-3">
+        <input id="opDate" type="date" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <input id="opPrice" type="number" class="form-control" placeholder="السعر">
+      </div>
+      <div class="col-md-2">
+        <select id="opType" class="form-select">
+          <option value="in">أخذ</option>
+          <option value="out">دفع</option>
+        </select>
+      </div>
+      <div class="col-md-2 d-grid">
+        <button class="btn btn-success" onclick="addOperation()">إضافة</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- الجداول -->
+  <div class="row">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-header fw-bold d-flex justify-content-between align-items-center">
+          <span>📋 العمليات</span>
+          <div>
+            <button class="btn btn-warning btn-sm me-2" onclick="resetAccount()">🔄 تصفير الحساب</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteAll()">🗑 حذف الكل</button>
+          </div>
+        </div>
+        <div class="card-body table-responsive">
+          <table class="table table-striped table-hover align-middle">
+            <thead class="table-primary">
+              <tr>
+                <th>الاسم</th>
+                <th>التاريخ</th>
+                <th>السعر</th>
+                <th>النوع</th>
+                <th>حذف</th>
+              </tr>
+            </thead>
+            <tbody id="opTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- المتبقي -->
+  <div class="card mt-4">
+    <div class="card-header fw-bold">💡 حساب المتبقي</div>
+    <div class="card-body">
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
+        <h4>المتبقي: <span id="remaining" class="text-success">0</span> 💵</h4>
+        <button class="btn btn-primary mt-3 mt-md-0" onclick="calculateRemaining()">🧮 احسب المتبقي</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let operations = JSON.parse(localStorage.getItem('operations') || '[]');
+
+  function saveToLocalStorage(){
+    localStorage.setItem('operations', JSON.stringify(operations));
+  }
+
+  function renderTable(){
+    const tbody = document.getElementById('opTableBody');
+    tbody.innerHTML = '';
+    operations.forEach((op, index) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${op.name}</td>
+        <td>${op.date}</td>
+        <td>${op.price}</td>
+        <td>${op.type === 'in' ? 'أخذ' : 'دفع'}</td>
+        <td>
+          <button class="btn btn-danger btn-sm" onclick="deleteOperation(${index})">🗑</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+    calculateRemaining();
+  }
+
+  function addOperation(){
+    const name = document.getElementById('opName').value.trim();
+    const date = document.getElementById('opDate').value;
+    const price = parseFloat(document.getElementById('opPrice').value);
+    const type = document.getElementById('opType').value;
+
+    if(!name || !date || isNaN(price)){
+      alert('⚠️ أدخل جميع البيانات');
+      return;
+    }
+
+    operations.push({ name, date, price, type });
+    saveToLocalStorage();
+    renderTable();
+    document.getElementById('opName').value='';
+    document.getElementById('opDate').value='';
+    document.getElementById('opPrice').value='';
+  }
+
+  function deleteOperation(index){
+    operations.splice(index,1);
+    saveToLocalStorage();
+    renderTable();
+  }
+
+  function calculateRemaining(){
+    let totalIn = 0;
+    let totalOut = 0;
+    operations.forEach(op => {
+      if(op.type === 'in') totalIn += op.price;
+      else totalOut += op.price;
+    });
+    document.getElementById('remaining').textContent = totalIn - totalOut;
+  }
+
+  function resetAccount(){
+    if(confirm('هل أنت متأكد من تصفير الحساب؟')){
+      operations = [];
+      saveToLocalStorage();
+      renderTable();
+    }
+  }
+
+  function deleteAll(){
+    if(confirm('⚠️ هل تريد حذف كل العمليات؟')){
+      operations = [];
+      saveToLocalStorage();
+      renderTable();
+    }
+  }
+
+  renderTable();
+</script>
+
+</body>
+</html>
